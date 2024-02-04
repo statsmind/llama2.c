@@ -24,16 +24,19 @@ from datetime import datetime
 from functools import partial
 
 import torch
+from transformers import AutoModel
+
 from model import Transformer, ModelArgs
 from torch.distributed import destroy_process_group, init_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from tinystories import Task
+from stories import Task
 from export import model_export
 
 # -----------------------------------------------------------------------------
 # I/O
 out_dir = "out"
+model_name = "bigscience/bloom-560m"
 eval_interval = 2000
 log_interval = 1
 eval_iters = 100
@@ -69,7 +72,7 @@ decay_lr = True  # whether to decay the learning rate
 warmup_iters = 1000  # how many steps to warm up for
 # system
 device = "cuda"  # examples: 'cpu', 'cuda', 'cuda:0', 'cuda:1' etc., or try 'mps' on macbooks
-dtype = "bfloat16"  # float32|bfloat16|float16
+dtype = "float16"  # float32|bfloat16|float16
 compile = True  # use PyTorch 2.0 to compile the model to be faster
 # -----------------------------------------------------------------------------
 config_keys = [
@@ -158,7 +161,8 @@ if init_from == "scratch":
     # init a new model from scratch
     print("Initializing a new model from scratch")
     gptconf = ModelArgs(**model_args)
-    model = Transformer(gptconf)
+    # model = Transformer(gptconf)
+    model = AutoModel.from_pretrained(model_name, trust_remote_code=True, resume_download=True)
 elif init_from == "resume":
     print(f"Resuming training from {out_dir}")
     # resume training from a checkpoint.

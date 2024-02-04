@@ -8,14 +8,15 @@ import argparse
 from typing import List
 
 from sentencepiece import SentencePieceProcessor
+from transformers import AutoTokenizer
 
 TOKENIZER_MODEL = "tokenizer.model" # the llama sentencepiece tokenizer model
 
 class Tokenizer:
     def __init__(self, tokenizer_model=None):
         model_path = tokenizer_model if tokenizer_model else TOKENIZER_MODEL
-        assert os.path.isfile(model_path), model_path
-        self.sp_model = SentencePieceProcessor(model_file=model_path)
+        self.sp_model = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True).tokenizer.sp_model
+        # self.sp_model = SentencePieceProcessor(model_file=model_path)
         self.model_path = model_path
 
         # BOS / EOS token IDs
@@ -24,7 +25,7 @@ class Tokenizer:
         self.eos_id: int = self.sp_model.eos_id()
         self.pad_id: int = self.sp_model.pad_id()
         #print(f"#words: {self.n_words} - BOS ID: {self.bos_id} - EOS ID: {self.eos_id}")
-        assert self.sp_model.vocab_size() == self.sp_model.get_piece_size()
+        # assert self.sp_model.vocab_size == self.sp_model.get_piece_size()
 
     def encode(self, s: str, bos: bool, eos: bool) -> List[int]:
         assert type(s) is str
@@ -68,6 +69,7 @@ class Tokenizer:
             for bytes, score in zip(tokens, scores):
                 f.write(struct.pack("fI", score, len(bytes)))
                 f.write(bytes)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
